@@ -1,59 +1,132 @@
 <x-layouts.app>
-    <div class="fixed inset-0 z-[100] flex items-center justify-center px-margin-mobile scrim-overlay bg-black/20 backdrop-blur-sm">
-        <div class="bg-surface-container-lowest w-full max-w-[600px] rounded-xl shadow-xl overflow-hidden border border-outline-variant animate-in fade-in zoom-in duration-300">
+    <div class="max-w-2xl mx-auto">
 
-            <div class="px-xl py-lg border-b border-outline-variant flex items-center justify-between">
-                <div>
-                    <h2 class="font-headline-md text-headline-md text-on-surface">Add New Task</h2>
-                    <p class="font-body-sm text-body-sm text-on-surface-variant">Stay organized and get things done.</p>
-                </div>
-                <button type="button" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high text-secondary transition-colors" onclick="window.history.back()">
-                    <span class="material-symbols-outlined" data-icon="close">close</span>
-                </button>
-            </div>
+        <div class="flex items-center gap-sm text-sm text-secondary mb-xl">
+            <a href="{{ route('tasks.index') }}" class="hover:text-primary">Tasks</a>
+            <span class="material-symbols-outlined" style="font-size:16px">chevron_right</span>
+            <span class="text-on-surface font-medium">New Task</span>
+        </div>
 
-            <form action="{{ route('tasks.store') }}" method="POST" class="p-xl space-y-lg">
-                @csrf <x-input
-                    name="title"
-                    label="Task Title"
-                    placeholder="What needs to be done?"
-                    required
-                    autofocus
-                />
+        <div class="bg-white rounded-2xl border border-outline-variant p-xl shadow-sm">
+            <h1 class="text-2xl font-bold text-on-surface mb-xl">Create Task</h1>
 
-                <div class="space-y-base">
-                    <label for="description" class="font-label-md text-label-md text-secondary uppercase block">Description (Optional)</label>
-                    <textarea name="description" id="description" class="w-full bg-[#F1F5F9] border-none rounded-lg px-md py-md font-body-lg text-body-lg text-on-surface placeholder:text-outline transition-all resize-none focus:outline-none focus:border-primary focus:bg-white" placeholder="Add some details..." rows="3">{{ old('description') }}</textarea>
+            <form action="{{ route('tasks.store') }}" method="POST" class="flex flex-col gap-lg">
+                @csrf
+
+                {{-- Title --}}
+                <div class="flex flex-col gap-xs">
+                    <label class="text-sm font-semibold text-on-surface" for="title">Title <span class="text-error">*</span></label>
+                    <input id="title" name="title" type="text" required value="{{ old('title') }}"
+                           placeholder="What needs to be done?"
+                           class="w-full px-md py-sm border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-surface-container-low placeholder:text-outline"/>
+                    @error('title')<p class="text-error text-xs">{{ $message }}</p>@enderror
                 </div>
 
+                {{-- Description --}}
+                <div class="flex flex-col gap-xs">
+                    <label class="text-sm font-semibold text-on-surface" for="description">Description</label>
+                    <textarea id="description" name="description" rows="3"
+                              placeholder="Add more details..."
+                              class="w-full px-md py-sm border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-surface-container-low placeholder:text-outline resize-none">{{ old('description') }}</textarea>
+                </div>
 
+                {{-- Project & Sprint --}}
+                <div class="grid grid-cols-2 gap-md">
+                    <div class="flex flex-col gap-xs">
+                        <label class="text-sm font-semibold text-on-surface" for="project_id">Project</label>
+                        <select id="project_id" name="project_id"
+                                class="w-full px-md py-sm border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-surface-container-low"
+                                onchange="loadSprints(this.value)">
+                            <option value="">— No Project —</option>
+                            @foreach($projects as $project)
+                                <option value="{{ $project->id }}" {{ old('project_id', request('project_id')) == $project->id ? 'selected' : '' }}>
+                                    {{ $project->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
-                <div class="flex items-center justify-end gap-md pt-xl">
-                    <button class="px-lg py-md rounded-lg font-button text-button text-secondary hover:bg-surface-container-high transition-all" onclick="window.history.back()" type="button">
+                    <div class="flex flex-col gap-xs">
+                        <label class="text-sm font-semibold text-on-surface" for="sprint_id">Sprint (optional)</label>
+                        <select id="sprint_id" name="sprint_id"
+                                class="w-full px-md py-sm border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-surface-container-low">
+                            <option value="">— Backlog —</option>
+                            @if(request('sprint_id'))
+                                {{-- Pre-select if passed via query string --}}
+                                <option value="{{ request('sprint_id') }}" selected>Sprint #{{ request('sprint_id') }}</option>
+                            @endif
+                        </select>
+                    </div>
+                </div>
+
+                {{-- Priority & Story Points --}}
+                <div class="grid grid-cols-2 gap-md">
+                    <div class="flex flex-col gap-xs">
+                        <label class="text-sm font-semibold text-on-surface" for="priority">Priority</label>
+                        <select id="priority" name="priority"
+                                class="w-full px-md py-sm border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-surface-container-low">
+                            <option value="low"      {{ old('priority') === 'low'      ? 'selected' : '' }}>🔽 Low</option>
+                            <option value="medium"   {{ old('priority', 'medium') === 'medium' ? 'selected' : '' }}>➖ Medium</option>
+                            <option value="high"     {{ old('priority') === 'high'     ? 'selected' : '' }}>🔼 High</option>
+                            <option value="critical" {{ old('priority') === 'critical' ? 'selected' : '' }}>🔥 Critical</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-xs">
+                        <label class="text-sm font-semibold text-on-surface" for="story_points">
+                            Story Points
+                            <span class="text-secondary font-normal text-xs">(Fibonacci: 1, 2, 3, 5, 8, 13...)</span>
+                        </label>
+                        <input id="story_points" name="story_points" type="number" min="1" max="100"
+                               value="{{ old('story_points') }}" placeholder="e.g. 3"
+                               class="w-full px-md py-sm border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-surface-container-low placeholder:text-outline"/>
+                    </div>
+                </div>
+
+                {{-- Actions --}}
+                <div class="flex gap-sm pt-sm border-t border-outline-variant/50">
+                    <button type="submit"
+                            class="flex items-center gap-sm px-lg py-sm bg-primary text-white rounded-xl font-semibold text-sm hover:bg-primary-dark active:scale-95 transition-all">
+                        <span class="material-symbols-outlined text-base">add_task</span>
+                        Create Task
+                    </button>
+                    <a href="{{ url()->previous() }}"
+                       class="px-lg py-sm border border-outline-variant rounded-xl font-semibold text-sm text-secondary hover:bg-gray-50 transition-all">
                         Cancel
-                    </button>
-                    <button class="px-xl py-md rounded-lg font-button text-white text-button bg-primary text-on-primary shadow-lg hover:shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-sm" type="submit">
-                        <span class="material-symbols-outlined text-[20px]" data-icon="check">check</span>
-                        Save Task
-                    </button>
+                    </a>
                 </div>
             </form>
         </div>
     </div>
 
-    <div class="fixed top-1/4 left-1/4 w-64 h-64 bg-primary/5 blur-[120px] rounded-full -z-10"></div>
-    <div class="fixed bottom-1/4 right-1/4 w-96 h-96 bg-tertiary/5 blur-[150px] rounded-full -z-10"></div>
-
     <script>
-        document.querySelectorAll('input, textarea, select').forEach(el => {
-            el.addEventListener('focus', () => {
-                const label = el.parentElement.querySelector('label');
-                if(label) label.style.color = '#3525cd';
-            });
-            el.addEventListener('blur', () => {
-                const label = el.parentElement.querySelector('label');
-                if(label) label.style.color = '';
-            });
-        });
+        // Load sprints for selected project
+        async function loadSprints(projectId) {
+            const sprintSelect = document.getElementById('sprint_id');
+            sprintSelect.innerHTML = '<option value="">— Backlog —</option>';
+
+            if (!projectId) return;
+
+            try {
+                const res = await fetch(`/projects/${projectId}/sprints-json`);
+                const sprints = await res.json();
+                sprints.forEach(sprint => {
+                    const opt = document.createElement('option');
+                    opt.value = sprint.id;
+                    opt.textContent = sprint.name + (sprint.status === 'active' ? ' ⚡ Active' : '');
+                    sprintSelect.appendChild(opt);
+                });
+
+                // Auto-select if sprint_id passed in query
+                const preselect = '{{ request('sprint_id') }}';
+                if (preselect) sprintSelect.value = preselect;
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // On page load, if project is preselected, load its sprints
+        const preSelectedProject = document.getElementById('project_id').value;
+        if (preSelectedProject) loadSprints(preSelectedProject);
     </script>
 </x-layouts.app>

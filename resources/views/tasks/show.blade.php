@@ -18,10 +18,6 @@
                         {{ $task->status === 'pending' ? 'bg-surface-variant text-on-surface-variant' : '' }}">
                         {{ str_replace('_', ' ', $task->status) }}
                     </span>
-
-                    <span class="text-xs text-secondary/80 flex items-center gap-xs bg-gray-100 px-sm py-xs rounded">
-                        {{ strlen($task->description) >= 30 ? 'Deep Work' : 'Quick Win' }}
-                    </span>
                 </div>
 
                 <h1 class="text-4xl font-bold text-on-surface tracking-tight leading-tight">
