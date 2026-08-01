@@ -63,8 +63,6 @@ Create and organize sprints, assign tasks, set priorities, deadlines, and monito
 ### 📊 Kanban Board
 Visualize workflow using drag-and-drop task management across different stages.
 
-### 👥 Team Collaboration
-Manage team members, permissions, and project responsibilities.
 
 ### 🔐 Authentication & Authorization
 Secure login system with role-based access control.
@@ -98,10 +96,6 @@ Secure login system with role-based access control.
 <img src="YOUR_SCREENSHOT_LINK">
 
 ## AI Task Generation
-
-<img src="YOUR_SCREENSHOT_LINK">
-
-## User Management
 
 <img src="YOUR_SCREENSHOT_LINK">
 
